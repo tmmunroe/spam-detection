@@ -9,6 +9,7 @@ from aws_cdk import (
     aws_route53 as route53,
     aws_s3 as s3,
     aws_s3_notifications as s3n,
+    aws_sagemaker_alpha as sagemaker,
     aws_ses as ses,
     aws_ses_actions as ses_actions
 )
@@ -23,6 +24,10 @@ class SpamDetectionStack(Stack):
         hosted_zone_id = "Z03027081WT8OA0QAB8NK"
 
         email_address = f"spamDetector@{domain_name}"
+        model_name = ""
+
+        # TODO - sagemaker 
+        # ml_model = sagemaker.Model.from_model_name(self, "Sagemaker", model_name)
         
         # lambda
         lambda_classifier = lambda_.Function(self, "SpamClassifier",
@@ -47,7 +52,8 @@ class SpamDetectionStack(Stack):
         
         # SES receipt rule + S3 action
         receipt_rules = ses.ReceiptRuleSet(self, "EmailReceiptRules")
-        receipt_rule = receipt_rules.add_rule("Email")
+        receipt_rule = receipt_rules.add_rule("Email", 
+            recipients=[email_address])
         receipt_rule.add_action(
             ses_actions.S3(
                 bucket=spam_detection_bucket,
@@ -65,10 +71,12 @@ class SpamDetectionStack(Stack):
             identity=ses.Identity.public_hosted_zone(hosted_zone=hosted_zone)
         )
 
-        # permissions - s3 can invoke lambda, lambda can send emails
+        # permissions - 
+        # --s3 can invoke lambda
         lambda_classifier.grant_invoke(iam.ServicePrincipal("s3.amazonaws.com"))
 
+        # --lambda can send emails and invoke sagemaker
         ses_policy = iam.PolicyStatement()
-        ses_policy.add_actions("ses:SendEmail", "ses:SendRawEmail")
+        ses_policy.add_actions("ses:SendEmail", "ses:SendRawEmail", "sage")
         ses_policy.add_all_resources()
         lambda_classifier.add_to_role_policy(ses_policy)

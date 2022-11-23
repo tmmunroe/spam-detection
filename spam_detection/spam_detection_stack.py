@@ -75,17 +75,20 @@ class SpamDetectionStack(Stack):
         )
 
         # permissions - 
+        # --ses can write emails to s3 bucket
+        spam_detection_bucket.grant_put(iam.ServicePrincipal("ses.amazonaws.com"), 
+            emails_prefix)
+
         # --s3 can invoke lambda
         lambda_classifier.grant_invoke(iam.ServicePrincipal("s3.amazonaws.com"))
 
-        # --lambda can send emails and invoke sagemaker
+        # --lambda can invoke sagemaker and send emails
+        sagemaker_policy = iam.PolicyStatement()
+        sagemaker_policy.add_actions("sagemaker:InvokeEndpoint", "sagemaker:InvokeEndpointAsync")
+        sagemaker_policy.add_all_resources()
+        lambda_classifier.add_to_role_policy(sagemaker_policy)
+
         ses_policy = iam.PolicyStatement()
         ses_policy.add_actions("ses:SendEmail", "ses:SendRawEmail")
         ses_policy.add_all_resources()
         lambda_classifier.add_to_role_policy(ses_policy)
-
-        sagemaker_policy = iam.PolicyStatement()
-        sagemaker_policy.add_actions("sagemaker:InvokeEndpoint", 
-            "sagemaker:InvokeEndpointAsync")
-        sagemaker_policy.add_all_resources()
-        lambda_classifier.add_to_role_policy(sagemaker_policy)

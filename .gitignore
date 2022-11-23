@@ -138,3 +138,5 @@ __pycache__
 
 .cdk.staging
 cdk.out
+
+sample.yaml

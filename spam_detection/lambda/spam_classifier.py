@@ -10,7 +10,7 @@ region = os.getenv("REGION")
 charset = "utf-8"
 
 ses_client = boto3.client("ses", region_name=region)
-
+sagemaker_client = boto3.client("sagemaker-runtime")
 
 def send_response(email, prediction:Prediction):
     recipient = "tmm2169@columbia.edu"
@@ -52,6 +52,7 @@ def send_response(email, prediction:Prediction):
 
 
 def predict(email):
+    # sagemaker_client.invoke_endpoint()
     return Prediction("spam", 0.9)
 
 

@@ -34,20 +34,23 @@ class SpamDetectionStack(Stack):
             runtime=lambda_.Runtime.PYTHON_3_9,
             handler="spam_classifier.lambda_handler",
             code=lambda_.Code.from_asset("spam_detection/lambda/"),
-            timeout=Duration.seconds(10),
+            timeout=Duration.seconds(30),
             environment={
                 "SENDER_EMAIL": email_address,
                 "REGION": env.region,
             })
 
         # s3 bucket
+        emails_prefix = "emails/"
+
         spam_detection_bucket = s3.Bucket(self, "SpamDetectionBucket",
             removal_policy=RemovalPolicy.DESTROY,
             auto_delete_objects=True,
             versioned=True)
-        
+
         spam_detection_bucket.add_object_created_notification(
-            dest=s3n.LambdaDestination(lambda_classifier)
+            s3n.LambdaDestination(lambda_classifier),
+            s3.NotificationKeyFilter(prefix=emails_prefix)
         )
         
         # SES receipt rule + S3 action
@@ -57,7 +60,7 @@ class SpamDetectionStack(Stack):
         receipt_rule.add_action(
             ses_actions.S3(
                 bucket=spam_detection_bucket,
-                object_key_prefix="emails/"
+                object_key_prefix=emails_prefix
             )
         )
         
@@ -77,6 +80,12 @@ class SpamDetectionStack(Stack):
 
         # --lambda can send emails and invoke sagemaker
         ses_policy = iam.PolicyStatement()
-        ses_policy.add_actions("ses:SendEmail", "ses:SendRawEmail", "sage")
+        ses_policy.add_actions("ses:SendEmail", "ses:SendRawEmail")
         ses_policy.add_all_resources()
         lambda_classifier.add_to_role_policy(ses_policy)
+
+        sagemaker_policy = iam.PolicyStatement()
+        sagemaker_policy.add_actions("sagemaker:InvokeEndpoint", 
+            "sagemaker:InvokeEndpointAsync")
+        sagemaker_policy.add_all_resources()
+        lambda_classifier.add_to_role_policy(sagemaker_policy)

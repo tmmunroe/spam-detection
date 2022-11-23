@@ -1,4 +1,5 @@
 from aws_cdk import (
+    CfnParameter,
     Duration,
     Environment,
     RemovalPolicy,
@@ -24,11 +25,16 @@ class SpamDetectionStack(Stack):
         hosted_zone_id = "Z03027081WT8OA0QAB8NK"
 
         email_address = f"spamDetector@{domain_name}"
-        model_name = ""
 
         # TODO - sagemaker 
-        # ml_model = sagemaker.Model.from_model_name(self, "Sagemaker", model_name)
-        
+        model_name = "spam-detection-tmm2169"
+        ml_model = sagemaker.Model.from_model_name(self, "Sagemaker", model_name)
+        model_endpoint = ""
+        model_endpoint_param = CfnParameter(self, "ModelEndpoint", 
+            type="String", default=model_endpoint,
+            description="The SageMaker endpoint for a spam classifier.")
+
+
         # lambda
         lambda_classifier = lambda_.Function(self, "SpamClassifier",
             runtime=lambda_.Runtime.PYTHON_3_9,
@@ -38,6 +44,7 @@ class SpamDetectionStack(Stack):
             environment={
                 "SENDER_EMAIL": email_address,
                 "REGION": env.region,
+                "MODEL_ENDPOINT": model_endpoint_param.value_as_string,
             })
 
         # s3 bucket

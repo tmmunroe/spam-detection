@@ -7,6 +7,8 @@ Prediction = namedtuple("Prediction", ("label", "confidence"))
 
 sender = os.getenv("SENDER_EMAIL")
 region = os.getenv("REGION")
+model_endpoint = os.getenv("MODEL_ENDPOINT")
+
 charset = "utf-8"
 
 ses_client = boto3.client("ses", region_name=region)

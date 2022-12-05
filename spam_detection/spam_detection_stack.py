@@ -48,6 +48,7 @@ class SpamDetectionStack(Stack):
             })
 
         # s3 bucket
+        sagemaker_prefix = "sms-spam-classifier/"
         emails_prefix = "emails/"
 
         spam_detection_bucket = s3.Bucket(self, "SpamDetectionBucket",
@@ -75,6 +76,17 @@ class SpamDetectionStack(Stack):
         hosted_zone = route53.HostedZone.from_hosted_zone_attributes(self, "route53-hosted-zone", 
             hosted_zone_id=hosted_zone_id,
             zone_name=domain_name)
+        
+        mx_record = route53.MxRecord(self, "MXRecord", 
+            zone=hosted_zone,
+            delete_existing=True,
+            values=[
+                route53.MxRecordValue(
+                    host_name="inbound-smtp.us-east-1.amazonaws.com",
+                    priority=10
+                )
+            ]
+        )
 
         # email identity
         email = ses.EmailIdentity(self, "EmailIdentity",

@@ -16,7 +16,6 @@ publication==0.0.3
 python-dateutil==2.8.2
 s3transfer==0.6.0
 six==1.16.0
-sms-spam-classifier-utils==0.1
 typeguard==2.13.3
 typing_extensions==4.4.0
 urllib3==1.26.12

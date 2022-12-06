@@ -35,10 +35,9 @@ class SpamDetectionStack(Stack):
             description="The SageMaker endpoint for a spam classifier.")
 
         # layer
-        lambda_layer = lambda_.LayerVersion(self, "LambdaLayer",
-            code=lambda_.Code.from_asset("layer"),
-            compatible_runtimes=[lambda_.Runtime.PYTHON_3_9],
-            removal_policy=RemovalPolicy.DESTROY)
+        lambda_layer = lambda_.LayerVersion.from_layer_version_attributes(self, "LambdaLayer",
+            layer_version_arn='arn:aws:lambda:us-east-1:336392948345:layer:AWSSDKPandas-Python39:1',
+            compatible_runtimes=[lambda_.Runtime.PYTHON_3_9])
 
         # lambda
         lambda_classifier = lambda_.Function(self, "SpamClassifier",

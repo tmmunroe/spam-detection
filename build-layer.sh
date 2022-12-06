@@ -1,1 +1,0 @@
-pip install packages/sms_spam_classifier_utils -t layer/python/

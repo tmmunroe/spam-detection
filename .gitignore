@@ -138,7 +138,8 @@ __pycache__
 
 .cdk.staging
 cdk.out
+.aws-sam
 
 sample.yaml
 layer
-s3_event.txt
+s3_event.json

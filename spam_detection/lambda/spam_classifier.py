@@ -62,7 +62,7 @@ class SimpleEmailMessage:
 
     @property
     def Body(self, split=True):
-        body = email.get_body(preferencelist=('plain',)).get_content()
+        body = self._message.get_body(preferencelist=('plain',)).get_content()
         return body.split() if split else body
 
 
@@ -136,7 +136,7 @@ def extract_email(event) -> SimpleEmailMessage:
     s3_response = s3_object.get()
     email_blob = s3_response['Body'].read()
 
-    message = BytesParser(policy=policy.default).parse(email_blob)
+    message = BytesParser(policy=policy.default).parsebytes(email_blob)
     print('Message: ', message)
 
     return SimpleEmailMessage(message)

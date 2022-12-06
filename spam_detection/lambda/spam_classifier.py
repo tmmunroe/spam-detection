@@ -61,9 +61,8 @@ class SimpleEmailMessage:
         return self._message['Subject']
 
     @property
-    def Body(self, split=True):
-        body = self._message.get_body(preferencelist=('plain',)).get_content()
-        return body.split() if split else body
+    def Body(self, removeNewLines=True):
+        return self._message.get_body(preferencelist=('plain',)).get_content()
 
 
 def send_response(predicted_email:SimpleEmailMessage, prediction:Prediction):

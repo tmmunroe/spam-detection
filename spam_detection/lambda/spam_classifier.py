@@ -68,7 +68,7 @@ class SimpleEmailMessage:
 def send_response(predicted_email:SimpleEmailMessage, prediction:Prediction):
     response_lines = "\n\n".join([
             f"We received your email sent at {predicted_email.Date} with the subject '{predicted_email.Subject}'.",
-            f"Here is a 240 character sample of the email body: \n\n'{predicted_email.Body[:240]}'\n\n",
+            f"Here is a 240 character sample of the email body: \n\n{predicted_email.Body[:240]}\n\n",
             f"The email was categorized as {prediction.label} with {prediction.confidence}% confidence."
         ])
 
@@ -98,7 +98,8 @@ def send_response(predicted_email:SimpleEmailMessage, prediction:Prediction):
         print(response["MessageId"])
 
 
-def predict(target_email: SimpleEmailMessage):
+def predict(target_email: SimpleEmailMessage) -> Prediction:
+    predictions = []
     print('Submitting to endpoint: ', model_endpoint)
     print('Email: ', target_email)
 
@@ -115,10 +116,19 @@ def predict(target_email: SimpleEmailMessage):
     print(response)
 
     body = json.load(codecs.getreader('utf-8')(response['Body']))
-    print('Response body: ')
     print(body)
 
-    return Prediction("spam", 0.9)
+    for labels, probabilities in zip(body['predicted_label'], body['predicted_probability']):
+        if len(labels) != 1 or len(probabilities) != 1:
+            raise ValueError('Expected 1 label and 1 probability')
+        label = 'Spam' if int(labels[0]) == 1 else 'Ham'
+        probability = probabilities[0]
+        predictions.append(Prediction(label, probability))
+    
+    if len(predictions) != 1:
+        raise ValueError(f'Expected 1 prediction but got {predictions}')
+        
+    return predictions[0]
 
 
 def extract_email(event) -> SimpleEmailMessage:

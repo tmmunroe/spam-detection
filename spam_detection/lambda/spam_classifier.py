@@ -1,13 +1,21 @@
 import boto3
 from botocore.exceptions import ClientError
+
+import codecs
 from collections import namedtuple
+import json
 import os
+from sms_spam_classifier_utils.sms_spam_classifier_utils import (
+    one_hot_encode,
+    vectorize_sequences
+)
 
 Prediction = namedtuple("Prediction", ("label", "confidence"))
 
 sender = os.getenv("SENDER_EMAIL")
 region = os.getenv("REGION")
 model_endpoint = os.getenv("MODEL_ENDPOINT")
+vocabulary_length = 9013
 
 charset = "utf-8"
 
@@ -54,11 +62,29 @@ def send_response(email, prediction:Prediction):
 
 
 def predict(email):
-    # sagemaker_client.invoke_endpoint()
+    print('Submitting to endpoint: ', model_endpoint)
+
+    one_hot_data = one_hot_encode([email], vocabulary_length)
+    encoded_message = vectorize_sequences(one_hot_data, vocabulary_length)
+
+    response = sagemaker_client.invoke_endpoint(
+        EndpointName=model_endpoint,
+        Body=encoded_message,
+        ContentType='text/csv'
+    )
+    print('Received response: ')
+    print(response)
+
+    body = json.load(codecs.getreader('utf-8')(response['Body']))
+    print('Response body: ')
+    print(body)
+
     return Prediction("spam", 0.9)
 
-
 def lambda_handler(event, context):
+    print("Event: ")
+    print(event)
+    
     email = "something"
 
     prediction = predict(email)

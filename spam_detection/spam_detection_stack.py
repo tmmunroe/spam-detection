@@ -29,11 +29,16 @@ class SpamDetectionStack(Stack):
         # TODO - sagemaker 
         model_name = "spam-detection-tmm2169"
         ml_model = sagemaker.Model.from_model_name(self, "Sagemaker", model_name)
-        model_endpoint = ""
+        model_endpoint = "sms-spam-classifier-mxnet-2022-12-03-19-07-10-957"
         model_endpoint_param = CfnParameter(self, "ModelEndpoint", 
             type="String", default=model_endpoint,
             description="The SageMaker endpoint for a spam classifier.")
 
+        # layer
+        lambda_layer = lambda_.LayerVersion(self, "LambdaLayer",
+            code=lambda_.Code.from_asset("layer"),
+            compatible_runtimes=[lambda_.Runtime.PYTHON_3_9],
+            removal_policy=RemovalPolicy.DESTROY)
 
         # lambda
         lambda_classifier = lambda_.Function(self, "SpamClassifier",
@@ -41,6 +46,7 @@ class SpamDetectionStack(Stack):
             handler="spam_classifier.lambda_handler",
             code=lambda_.Code.from_asset("spam_detection/lambda/"),
             timeout=Duration.seconds(30),
+            layers=[lambda_layer],
             environment={
                 "SENDER_EMAIL": email_address,
                 "REGION": env.region,

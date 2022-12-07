@@ -29,9 +29,8 @@ class SpamDetectionStack(Stack):
         # TODO - sagemaker 
         model_name = "spam-detection-tmm2169"
         ml_model = sagemaker.Model.from_model_name(self, "Sagemaker", model_name)
-        model_endpoint = "sms-spam-classifier-mxnet-2022-12-03-19-07-10-957"
-        model_endpoint_param = CfnParameter(self, "ModelEndpoint", 
-            type="String", default=model_endpoint,
+        model_endpoint_param = CfnParameter(self, "ModelEndpoint",
+            type="String", default="sms-spam-classifier-mxnet-2022-12-03-19-07-10-957",
             description="The SageMaker endpoint for a spam classifier.")
 
         # layer
@@ -49,19 +48,19 @@ class SpamDetectionStack(Stack):
             environment={
                 "SENDER_EMAIL": email_address,
                 "REGION": env.region,
-                "MODEL_ENDPOINT": model_endpoint_param.value_as_string,
+                "ENDPOINT": model_endpoint_param.value_as_string,
             })
 
         # s3 bucket
         sagemaker_prefix = "sms-spam-classifier/"
         emails_prefix = "emails/"
 
-        spam_detection_bucket = s3.Bucket(self, "SpamDetectionBucket",
+        self.spam_detection_bucket = s3.Bucket(self, "SpamDetectionBucket",
             removal_policy=RemovalPolicy.DESTROY,
             auto_delete_objects=True,
             versioned=True)
 
-        spam_detection_bucket.add_object_created_notification(
+        self.spam_detection_bucket.add_object_created_notification(
             s3n.LambdaDestination(lambda_classifier),
             s3.NotificationKeyFilter(prefix=emails_prefix)
         )
@@ -72,7 +71,7 @@ class SpamDetectionStack(Stack):
             recipients=[email_address])
         receipt_rule.add_action(
             ses_actions.S3(
-                bucket=spam_detection_bucket,
+                bucket=self.spam_detection_bucket,
                 object_key_prefix=emails_prefix
             )
         )
@@ -99,14 +98,17 @@ class SpamDetectionStack(Stack):
         )
 
         # permissions - 
+
         # --ses can write emails to s3 bucket
-        spam_detection_bucket.grant_put(iam.ServicePrincipal("ses.amazonaws.com"), 
+        self.spam_detection_bucket.grant_put(iam.ServicePrincipal("ses.amazonaws.com"), 
             emails_prefix)
 
         # --s3 can invoke lambda
         lambda_classifier.grant_invoke(iam.ServicePrincipal("s3.amazonaws.com"))
 
-        # --lambda can invoke sagemaker and send emails
+        # --lambda can invoke sagemaker and send emails and get from s3
+        self.spam_detection_bucket.grant_read(lambda_classifier)
+
         sagemaker_policy = iam.PolicyStatement()
         sagemaker_policy.add_actions("sagemaker:InvokeEndpoint", "sagemaker:InvokeEndpointAsync")
         sagemaker_policy.add_all_resources()

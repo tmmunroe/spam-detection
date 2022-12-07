@@ -1,0 +1,1 @@
+cdk deploy SpamDetectionStack --parameters ModelEndpoint=sms-spam-classifier-mxnet-2022-12-09-00-40-26-444

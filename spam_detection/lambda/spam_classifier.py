@@ -16,7 +16,7 @@ from sms_spam_classifier_utils import (
 # resource, environment variables, constances
 sender = os.getenv("SENDER_EMAIL")
 region = os.getenv("REGION")
-model_endpoint = os.getenv("MODEL_ENDPOINT")
+model_endpoint = os.getenv("ENDPOINT")
 vocabulary_length = 9013
 
 charset = "utf-8"
@@ -68,8 +68,8 @@ class SimpleEmailMessage:
 def send_response(predicted_email:SimpleEmailMessage, prediction:Prediction):
     response_lines = "\n\n".join([
             f"We received your email sent at {predicted_email.Date} with the subject '{predicted_email.Subject}'.",
-            f"Here is a 240 character sample of the email body: \n\n{predicted_email.Body[:240]}\n\n",
-            f"The email was categorized as {prediction.label} with {prediction.confidence}% confidence."
+            f"Here is a 240 character sample of the email body: \n\n{predicted_email.Body[:240]}",
+            f"The email was categorized as {prediction.label} with {prediction.confidence * 100:.2f}% confidence."
         ])
 
     try:
@@ -121,9 +121,12 @@ def predict(target_email: SimpleEmailMessage) -> Prediction:
     for labels, probabilities in zip(body['predicted_label'], body['predicted_probability']):
         if len(labels) != 1 or len(probabilities) != 1:
             raise ValueError('Expected 1 label and 1 probability')
-        label = 'Spam' if int(labels[0]) == 1 else 'Ham'
+        label = int(labels[0])
         probability = probabilities[0]
-        predictions.append(Prediction(label, probability))
+
+        category = 'Spam' if label == 1 else 'Ham'
+        confidence = probability if label == 1 else (1-probability)
+        predictions.append(Prediction(category, confidence))
     
     if len(predictions) != 1:
         raise ValueError(f'Expected 1 prediction but got {predictions}')

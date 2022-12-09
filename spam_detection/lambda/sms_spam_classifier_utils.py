@@ -1,26 +1,9 @@
-import string
-import sys
-import numpy as np
 
 from hashlib import md5
+import numpy as np
+import pandas as pd
 
-if sys.version_info < (3,):
-    maketrans = string.maketrans
-else:
-    maketrans = str.maketrans
-    
-def vectorize_sequences(sequences, vocabulary_length):
-    results = np.zeros((len(sequences), vocabulary_length))
-    for i, sequence in enumerate(sequences):
-       results[i, sequence] = 1. 
-    return results
-
-def one_hot_encode(messages, vocabulary_length):
-    data = []
-    for msg in messages:
-        temp = one_hot(msg, vocabulary_length)
-        data.append(temp)
-    return data
+default_vocabulary_length = 9013
 
 def text_to_word_sequence(text,
                           filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n',
@@ -39,48 +22,12 @@ def text_to_word_sequence(text,
     if lower:
         text = text.lower()
 
-    if sys.version_info < (3,):
-        if isinstance(text, unicode):
-            translate_map = dict((ord(c), unicode(split)) for c in filters)
-            text = text.translate(translate_map)
-        elif len(split) == 1:
-            translate_map = maketrans(filters, split * len(filters))
-            text = text.translate(translate_map)
-        else:
-            for c in filters:
-                text = text.replace(c, split)
-    else:
-        translate_dict = dict((c, split) for c in filters)
-        translate_map = maketrans(translate_dict)
-        text = text.translate(translate_map)
+    translate_dict = dict((c, split) for c in filters)
+    translate_map = str.maketrans(translate_dict)
+    text = text.translate(translate_map)
 
     seq = text.split(split)
     return [i for i in seq if i]
-
-def one_hot(text, n,
-            filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n',
-            lower=True,
-            split=' '):
-    """One-hot encodes a text into a list of word indexes of size n.
-    This is a wrapper to the `hashing_trick` function using `hash` as the
-    hashing function; unicity of word to index mapping non-guaranteed.
-    # Arguments
-        text: Input text (string).
-        n: int. Size of vocabulary.
-        filters: list (or concatenation) of characters to filter out, such as
-            punctuation. Default: `!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n`,
-            includes basic punctuation, tabs, and newlines.
-        lower: boolean. Whether to set the text to lowercase.
-        split: str. Separator for word splitting.
-    # Returns
-        List of integers in [1, n]. Each integer encodes a word
-        (unicity non-guaranteed).
-    """
-    return hashing_trick(text, n,
-                         hash_function='md5',
-                         filters=filters,
-                         lower=lower,
-                         split=split)
 
 
 def hashing_trick(text, n,
@@ -122,3 +69,41 @@ def hashing_trick(text, n,
                                 lower=lower,
                                 split=split)
     return [int(hash_function(w) % (n - 1) + 1) for w in seq]
+
+def one_hot(text, n,
+            filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n',
+            lower=True,
+            split=' '):
+    """One-hot encodes a text into a list of word indexes of size n.
+    This is a wrapper to the `hashing_trick` function using `hash` as the
+    hashing function; unicity of word to index mapping non-guaranteed.
+    # Arguments
+        text: Input text (string).
+        n: int. Size of vocabulary.
+        filters: list (or concatenation) of characters to filter out, such as
+            punctuation. Default: `!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n`,
+            includes basic punctuation, tabs, and newlines.
+        lower: boolean. Whether to set the text to lowercase.
+        split: str. Separator for word splitting.
+    # Returns
+        List of integers in [1, n]. Each integer encodes a word
+        (unicity non-guaranteed).
+    """
+    return hashing_trick(text, n,
+                         hash_function='md5',
+                         filters=filters,
+                         lower=lower,
+                         split=split)
+
+def vectorize_sequences(sequences, vocabulary_length):
+    results = np.zeros((len(sequences), vocabulary_length))
+    for i, sequence in enumerate(sequences):
+       results[i, sequence] = 1. 
+    return results
+
+def one_hot_encode(messages, vocabulary_length):
+    data = []
+    for msg in messages:
+        temp = one_hot(msg, vocabulary_length)
+        data.append(temp)
+    return data

@@ -1,1 +1,2 @@
-cdk deploy SpamDetectionStack --parameters ModelEndpoint=sms-spam-classifier-mxnet-2022-12-09-00-40-26-444
+cp sagemaker_model/docker/code/sms_spam_classifier_utilities.py spam_detection/lambda/sms_spam_classifier_utils.py
+cdk deploy --all --parameters SpamDetectionStack:ModelEndpoint=spam-mxnet-classifier-endpoint

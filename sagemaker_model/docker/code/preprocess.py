@@ -5,8 +5,7 @@ import json
 import pandas as pd
 import numpy as np
 
-from sms_spam_classifier_utilities import transform
-from sms_spam_classifier_common import vocabulary_length
+from sms_spam_classifier_utilities import one_hot_encode, vectorize_sequences, default_vocabulary_length
 
 raw_data_path = "/opt/ml/processing/input/SMSSpamCollection"
 
@@ -23,7 +22,10 @@ if __name__ =='__main__':
     messages = df[df.columns[1]].values
 
     # one hot encoding for each SMS message
-    encoded_messages = transform(messages, vocabulary_length)
+    # encoded_messages = transform(messages, default_vocabulary_length)
+    
+    one_hot_data = one_hot_encode(messages, default_vocabulary_length)
+    encoded_messages = vectorize_sequences(one_hot_data, default_vocabulary_length)
     df2 = pd.DataFrame(encoded_messages)
     df2.insert(0, 'spam', targets)
 
@@ -32,5 +34,5 @@ if __name__ =='__main__':
     train_set = df2[:split_index]
     val_set = df2[split_index:]
 
-    train_set.to_csv(train_data_gz_path, header=True, index=False, compression='gzip')
-    val_set.to_csv(val_data_gz_path, header=True, index=False, compression='gzip')
+    train_set.to_csv(train_data_gz_path, header=False, index=False, compression='gzip')
+    val_set.to_csv(val_data_gz_path, header=False, index=False, compression='gzip')

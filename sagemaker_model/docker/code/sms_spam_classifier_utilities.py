@@ -3,6 +3,8 @@ from hashlib import md5
 import numpy as np
 import pandas as pd
 
+default_vocabulary_length = 9013
+
 def text_to_word_sequence(text,
                           filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n',
                           lower=True, split=" "):
@@ -105,7 +107,3 @@ def one_hot_encode(messages, vocabulary_length):
         temp = one_hot(msg, vocabulary_length)
         data.append(temp)
     return data
-
-def transform(messages, vocabulary_length):
-    one_hot_data = one_hot_encode(messages, vocabulary_length)
-    return vectorize_sequences(one_hot_data, vocabulary_length)

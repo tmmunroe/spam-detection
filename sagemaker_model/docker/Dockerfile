@@ -14,5 +14,5 @@ ENV SAGEMAKER_SUBMIT_DIRECTORY /opt/ml/code
 
 ENV PATH="/opt/ml/code:${PATH}"
 
-# Defines train.py as script entrypoint 
-ENV SAGEMAKER_PROGRAM preprocess.py
+# Defines train.py as script entrypoint
+ENV SAGEMAKER_PROGRAM train.py

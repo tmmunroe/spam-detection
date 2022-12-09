@@ -10,14 +10,15 @@ import json
 import os
 from sms_spam_classifier_utils import (
     one_hot_encode,
-    vectorize_sequences
+    vectorize_sequences,
+    default_vocabulary_length
 )
 
 # resource, environment variables, constances
 sender = os.getenv("SENDER_EMAIL")
 region = os.getenv("REGION")
 model_endpoint = os.getenv("ENDPOINT")
-vocabulary_length = 9013
+vocabulary_length = default_vocabulary_length
 
 charset = "utf-8"
 sagemaker_encoding = 'utf-8'
@@ -103,6 +104,8 @@ def predict(target_email: SimpleEmailMessage) -> Prediction:
     print('Submitting to endpoint: ', model_endpoint)
     print('Email: ', target_email)
 
+    print(f'Predicting body: {target_email.Body}')
+    
     one_hot_data = one_hot_encode([target_email.Body], vocabulary_length)
     encoded_message = vectorize_sequences(one_hot_data, vocabulary_length)
     packed_message = json.dumps(encoded_message.tolist()).encode(sagemaker_encoding)

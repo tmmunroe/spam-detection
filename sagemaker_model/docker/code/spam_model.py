@@ -5,23 +5,36 @@ import logging
 import mxnet as mx
 from mxnet import gluon, autograd
 from mxnet.gluon import nn
-from sagemaker_mxnet_container.training_utils import save
 import os
 import numpy as np
 import json
 import time
 import pandas
+import shutil
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+
+# ------------------------------------------------------------ #
+# Hosting methods                                              #
+# ------------------------------------------------------------ #
 
 def model_fn(model_dir):
+    logger.info(f"Preparing model from {model_dir}")
     net = gluon.nn.SymbolBlock(
         outputs=mx.sym.load('{}/model.json'.format(model_dir)),
         inputs=mx.sym.var('data'))
-    
-    net.load_params('{}/model.params'.format(model_dir), ctx=mx.cpu())
 
+    net.load_parameters(f'{model_dir}/model.params', ctx=mx.cpu())
+    # net.load_params('{}/model.params'.format(model_dir), ctx=mx.cpu())
+
+    logger.info("Model prepared!")
     return net
 
+
 def transform_fn(net, data, input_content_type, output_content_type):
+    logger.info(f"Received request:\nData:{data}\nInputContentType:{input_content_type}\nOutputContentType:{output_content_type}")
     try:
         parsed = json.loads(data)
         nda = mx.nd.array(parsed)
@@ -38,11 +51,29 @@ def transform_fn(net, data, input_content_type, output_content_type):
         return response_body, output_content_type
     except Exception as ex:
         response_body = '{error: }' + str(ex)
+        logger.info(f"Exception thrown: {response_body}")
         return response_body, output_content_type
 
 
+
+# ------------------------------------------------------------ #
+# Training methods                                             #
+# ------------------------------------------------------------ #
+
+def save(net, model_dir, include_inference_code=True):
+    y = net(mx.sym.var('data'))
+    y.save('{}/model.json'.format(model_dir))
+    net.collect_params().save('{}/model.params'.format(model_dir))
+    
+    if include_inference_code:
+        src = os.path.dirname(os.path.abspath(__file__))
+        dest =  f'{model_dir}/code'
+        logger.info(f'src: {src}')
+        logger.info(f'dest: {dest}')
+        shutil.copytree(src, dest)
+
 def get_train_data(data_path, batch_size):
-    print('Train data path: ' + data_path)
+    logger.info('Train data path: ' + data_path)
     df = pandas.read_csv('{}/train.gz'.format(data_path))
     features = df[df.columns[1:]].values.astype(dtype=np.float32)
     labels = df[df.columns[0]].values.reshape((-1, 1)).astype(dtype=np.float32)
@@ -50,7 +81,7 @@ def get_train_data(data_path, batch_size):
     return gluon.data.DataLoader(gluon.data.ArrayDataset(features, labels), batch_size=batch_size, shuffle=True)
 
 def get_val_data(data_path, batch_size):
-    print('Validation data path: ' + data_path)
+    logger.info('Validation data path: ' + data_path)
     df = pandas.read_csv('{}/val.gz'.format(data_path))
     features = df[df.columns[1:]].values.astype(dtype=np.float32)
     labels = df[df.columns[0]].values.reshape((-1, 1)).astype(dtype=np.float32)
@@ -110,8 +141,8 @@ def train(
     else:
         kvstore = 'dist_device_sync' if num_gpus > 0 else 'dist_sync'
 
-    trainer = gluon.Trainer(net.collect_params(), 'sgd',
-                            {'learning_rate': learning_rate, 'momentum': momentum},
+    trainer = gluon.Trainer(net.collect_params(), 'adam',
+                            {'learning_rate': learning_rate},
                             kvstore=kvstore)
     
     metric = mx.metric.Accuracy()
@@ -144,62 +175,15 @@ def train(
 
             if i % log_interval == 0 and i > 0:
                 name, acc = metric.get()
-                print('[Epoch %d Batch %d] Training: %s=%f, %f samples/s' %
+                logger.info('[Epoch %d Batch %d] Training: %s=%f, %f samples/s' %
                       (epoch, i, name, acc, batch_size / (time.time() - btic)))
 
             btic = time.time()
 
         name, acc = metric.get()
-        print('[Epoch %d] Training: %s=%f' % (epoch, name, acc))
+        logger.info(f'[Epoch {epoch}] Training: {name}={acc}')
 
         name, val_acc = test(ctx, net, val_data)
-        print('[Epoch %d] Validation: %s=%f' % (epoch, name, val_acc))
+        logger.info(f'[Epoch {epoch}] Validation: {name}={val_acc}')
 
     return net
-
-
-def parse_args():
-    parser = argparse.ArgumentParser()
-
-    # hyperparameters sent by the client are passed as command-line arguments to the script.
-    parser.add_argument('--epochs', type=int, default=10)
-    parser.add_argument('--batch-size', type=int, default=100)
-    parser.add_argument('--learning-rate', type=float, default=0.01)
-    parser.add_argument('--momentum', type=float, default=0.9)
-    parser.add_argument('--log-interval', type=int, default=200)
-
-    # an alternative way to load hyperparameters via SM_HPS environment variable.
-    parser.add_argument('--sm-hps', type=json.loads, default=os.environ['SM_HPS'])
-
-    # input data and model directories
-    parser.add_argument('--model-dir', type=str, default=os.environ['SM_MODEL_DIR'])
-    parser.add_argument('--train', type=str, default=os.environ['SM_CHANNEL_TRAIN'])
-    parser.add_argument('--val', type=str, default=os.environ['SM_CHANNEL_VAL'])
-
-    parser.add_argument("--current-host", type=str, default=os.environ["SM_CURRENT_HOST"])
-    parser.add_argument("--hosts", type=list, default=json.loads(os.environ["SM_HOSTS"]))
-
-    return parser.parse_args()
-
-
-if __name__ =='__main__':
-    args = parse_args()
-    num_cpus = int(os.environ["SM_NUM_CPUS"])
-    num_gpus = int(os.environ["SM_NUM_GPUS"])
-
-    net = train(
-        args.current_host,
-        args.hosts,
-        num_cpus,
-        num_gpus,
-        args.train,
-        args.val,
-        args.model_dir,
-        args.batch_size,
-        args.epochs,
-        args.learning_rate,
-        args.momentum,
-        args.log_interval
-    )
-
-    save(net, args.model_dir)

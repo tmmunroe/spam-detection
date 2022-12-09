@@ -143,3 +143,4 @@ cdk.out
 sample.yaml
 layer
 s3_event.json
+data/

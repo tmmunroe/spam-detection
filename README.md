@@ -1,58 +1,70 @@
+Hello everyone,
 
-# Welcome to your CDK Python project!
+Assignment 3 has been released and can be accessed on Courseworks under Files -> Assignments [link].
 
-This is a blank project for CDK development with Python.
+The due date for submission is 12/05 11:59 PM.
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
-This project is set up like a standard Python project.  The initialization
-process also creates a virtualenv within this project, stored under the `.venv`
-directory.  To create the virtualenv it assumes that there is a `python3`
-(or `python` for Windows) executable in your path with access to the `venv`
-package. If for any reason the automatic creation of the virtualenv fails,
-you can create the virtualenv manually.
+Rubric:
 
-To manually create a virtualenv on MacOS and Linux:
+Correct classification for SPAM email - 20 - GOOD
 
-```
-$ python3 -m venv .venv
-```
+Correct classification for HAM email - 20 - GOOD
 
-After the init process completes and the virtualenv is created, you can use the following
-step to activate your virtualenv.
+receive_date in response - 4 - GOOD
 
-```
-$ source .venv/bin/activate
-```
+subject in response - 4 - GOOD
 
-If you are a Windows platform, you would activate the virtualenv like this:
+body in response - 4 - GOOD
 
-```
-% .venv\Scripts\activate.bat
-```
+Confidence Score in response - 4 - GOOD
 
-Once the virtualenv is activated, you can install the required dependencies.
+Uses stack parameter/env variable for prediction endpoint - 4 - GOOD
 
-```
-$ pip install -r requirements.txt
-```
+Functional stack created without error - 5 - GOOD
 
-At this point you can now synthesize the CloudFormation template for this code.
+5 of the following 7 resources created using CloudFormation (7 points/resource): - GOOD
 
-```
-$ cdk synth
-```
+- IAM roles
 
-To add additional dependencies, for example other CDK libraries, just add
-them to your `setup.py` file and rerun the `pip install -r requirements.txt`
-command.
+- Lambda Function LF1
 
-## Useful commands
+- Bucket S1
 
- * `cdk ls`          list all stacks in the app
- * `cdk synth`       emits the synthesized CloudFormation template
- * `cdk deploy`      deploy this stack to your default AWS account/region
- * `cdk diff`        compare deployed stack with current state
- * `cdk docs`        open CDK documentation
+- Lambda InvokePermission for S1
 
-Enjoy!
+- BucketPolicy (Object Put/Create trigger)
+
+- ReceiptRule
+
+- ReceiptRuleSet (no need to activate)
+
+(Extra Credit) Lambda function that runs the retraining and code deployment - 10 - GOOD
+
+
+Note: Please make sure that your CloudFormation resources interface with each other for this assignment. The CloudFormation template should mimic the "actual" configuration as much as possible. For example, if there is a bucket that invokes a Lambda function every time a "Put" event is triggered on it, please make sure that your CloudFormation template takes care of it. Only partial credit will be awarded for creating "dummy" or standalone resources without appropriate permissions, policies or interactions.
+
+Good luck!
+
+Best,
+Instructional Staff.
+
+cdk destroy -> 11:12pm -> 11:21pm (with issues- receipt rule set wasn't deactivated)
+./deploy.sh -> 11:32pm -> 12:42pm
+
+
+destroy stacks - how long?
+deploy new stacks - how long?
+test email functionality
+
+destroy steps-
+deactivate ses rule set
+cdk destroy --all
+
+
+deployment steps-
+./deploy-model.sh
+./deploy.sh
+
+go to receipt rule sets, activate receipt rule
+put raw data in s3

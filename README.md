@@ -16,7 +16,7 @@ cdk destroy --all
 ./deploy-model.sh
 ./deploy.sh
 activate ses receipt rule set
-delete endpoint + create run step functions to generate new endpoint
+delete endpoint + run step functions to create new endpoint
 
 =================================================================================
 
@@ -27,13 +27,6 @@ Since each slot is only 10 minutes, we urge you to make sure that all your AWS s
 Please be prepared with a couple of messages that can show accurate predictions of spam/ham. 
 
 Grading Rubric: https://edstem.org/us/courses/29541/discussion/2139714"														
-
-
-Hello everyone,
-
-Assignment 3 has been released and can be accessed on Courseworks under Files -> Assignments [link].
-
-The due date for submission is 12/05 11:59 PM.
 
 
 =================================================================================
@@ -65,23 +58,23 @@ Did you catch the bus ? Are you frying an egg ? Did you make a tea? Are you eati
 
 Rubric:
 
-Correct classification for SPAM email - 20 - GOOD
+Correct classification for SPAM email - 20 - GOOD | PreDemo: GOOD
 
-Correct classification for HAM email - 20 - GOOD
+Correct classification for HAM email - 20 - GOOD | PreDemo: GOOD
 
-receive_date in response - 4 - GOOD
+receive_date in response - 4 - GOOD | PreDemo: GOOD
 
-subject in response - 4 - GOOD
+subject in response - 4 - GOOD | PreDemo: GOOD
 
-body in response - 4 - GOOD
+body in response - 4 - GOOD | PreDemo: GOOD
 
-Confidence Score in response - 4 - GOOD
+Confidence Score in response - 4 - GOOD | PreDemo: GOOD
 
-Uses stack parameter/env variable for prediction endpoint - 4 - GOOD
+Uses stack parameter/env variable for prediction endpoint - 4 - GOOD | PreDemo: GOOD
 
-Functional stack created without error - 5 - GOOD
+Functional stack created without error - 5 - GOOD | PreDemo: GOOD
 
-5 of the following 7 resources created using CloudFormation (7 points/resource): - GOOD
+5 of the following 7 resources created using CloudFormation (7 points/resource): - GOOD | PreDemo: GOOD
 
 - IAM roles
 

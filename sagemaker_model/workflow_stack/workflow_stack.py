@@ -38,7 +38,10 @@ class SagemakerWorkflowStack(Stack):
         image_uri = "756059218166.dkr.ecr.us-east-1.amazonaws.com/mxnet-container-tmandevi"
         inference_image_uri = "763104351884.dkr.ecr.us-east-1.amazonaws.com/mxnet-inference:1.9.0-cpu-py38-ubuntu20.04-sagemaker"
 
-        s3_raw_data = f"s3://{bucket.bucket_name}/{object_prefix}/data/raw/SMSSpamCollection"
+        # don't want to use the same bucket for raw data cause it gets deleted when destroying stack
+        raw_data_bucket = s3.Bucket.from_bucket_name(self, "RawDataBucket", "sagemaker-raw-data")
+
+        s3_raw_data = f"s3://{raw_data_bucket.bucket_name}/{object_prefix}/data/raw/SMSSpamCollection"
         s3_train_data = f"s3://{bucket.bucket_name}/{object_prefix}/output/data/train"
         s3_val_data = f"s3://{bucket.bucket_name}/{object_prefix}/output/data/val"
         s3_model_output = f"s3://{bucket.bucket_name}/{object_prefix}/output/model"
@@ -242,7 +245,7 @@ class SagemakerWorkflowStack(Stack):
 
         # event to kick of state machine
         rule = events.Rule(self, "Rule", 
-            schedule=events.Schedule.cron(hour='19:00', minute='10')
+            schedule=events.Schedule.cron(hour='19', minute='10')
         )
         sm_target = targets.SfnStateMachine(sm, retry_attempts=0)
         rule.add_target(sm_target)
